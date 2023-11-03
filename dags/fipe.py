@@ -18,6 +18,13 @@ default_args = {
     'retry_delay': timedelta(minutes=2),
     }
 
+def extractFile():
+    dls = "https://github.com/VDelomo/analise_fipe/blob/develop/data/fipe_cars.csv"
+    resp = requests.get(dls, allow_redirects=True)
+
+    output = open('data/fipe_cars.csv', 'wb')
+    output.write(resp.content)
+
 def refined():
     df_fipe = pd.read_csv('/data/fipe_cars.csv',sep = ";")
 
@@ -109,6 +116,11 @@ with DAG(
     dagrun_timeout=timedelta(minutes=60),
     max_active_runs=1,
 ) as dag:
+    
+    extractFiles = PythonOperator(
+        task_id="extractFile",
+        python_callable= extractFile
+    )
 
     refined = PythonOperator(
         task_id="refined",
@@ -121,5 +133,5 @@ with DAG(
         python_callable = fipe_merge
     )
 
-        
+    extractFiles >> refined    
     refined >> fipe_merge
